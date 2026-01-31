@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+venv/
+
+# Output files
+*.wav
+webapp/output/
+
+# Environment
+.env
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc

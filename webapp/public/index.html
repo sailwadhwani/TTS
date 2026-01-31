@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qwen3-TTS</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <h1 class="app-title">Qwen3-TTS</h1>
+      <button class="btn-voice-setup" id="voiceSetupBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+        Voice Setup
+      </button>
+    </header>
+
+    <!-- Voice Selection -->
+    <div class="form-group">
+      <label class="form-label">Voice</label>
+      <select class="form-select" id="voiceSelect">
+        <!-- Populated by JavaScript -->
+      </select>
+    </div>
+
+    <!-- Style Selection -->
+    <div class="form-group">
+      <label class="form-label">Style</label>
+      <select class="form-select" id="styleSelect">
+        <!-- Populated by JavaScript -->
+      </select>
+      <div id="customStyleContainer" style="display: none; margin-top: 8px;">
+        <input type="text" class="form-input" id="customStyleInput" placeholder="Describe the speaking style...">
+      </div>
+    </div>
+
+    <!-- Model Selection -->
+    <div class="form-group">
+      <label class="form-label">Model</label>
+      <div class="model-toggle">
+        <button class="model-btn active" data-model="0.6B">0.6B Faster</button>
+        <button class="model-btn" data-model="1.7B">1.7B Quality</button>
+      </div>
+    </div>
+
+    <!-- Advanced: Voice Design -->
+    <details class="advanced-section">
+      <summary>Advanced: Design a Voice</summary>
+      <div class="advanced-content">
+        <textarea class="form-textarea" id="voiceDesignText" placeholder="Describe the voice you want, e.g., 'A warm female voice with a slight British accent, speaking calmly and professionally...'"></textarea>
+        <p class="advanced-hint">When used, this overrides the voice selector above and uses the 1.7B model.</p>
+      </div>
+    </details>
+
+    <!-- Text Input -->
+    <div class="form-group">
+      <label class="form-label">Text to Speak</label>
+      <textarea class="form-textarea" id="textInput" placeholder="Enter the text you want to convert to speech..."></textarea>
+    </div>
+
+    <!-- Generate Button Row -->
+    <div class="generate-row">
+      <button class="btn-generate" id="generateBtn">Generate Speech</button>
+      <label class="autoplay-toggle" title="Auto-play audio when ready">
+        <div class="toggle-switch active" id="autoplayToggle"></div>
+        <span>Autoplay</span>
+      </label>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text">
+        <span id="progressStatus">Generating speech...</span>
+        <span class="progress-percent" id="progressPercent">0%</span>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="status" id="status"></div>
+
+    <!-- Audio Player -->
+    <div class="audio-player" id="audioPlayer">
+      <audio controls id="audioElement"></audio>
+    </div>
+  </div>
+
+  <!-- Voice Setup Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Voice Setup</h2>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Saved Voices -->
+        <div class="section-title">My Saved Voices</div>
+        <div class="voices-grid" id="savedVoicesContainer">
+          <span class="no-voices-message">No saved voices yet</span>
+        </div>
+
+        <div class="divider"><span>Add New Voice</span></div>
+
+        <!-- Record Section -->
+        <div class="record-section">
+          <div class="record-title">Record Your Voice</div>
+          <div class="record-script" id="recordScript">
+            "The quick brown fox jumps over the lazy dog. I really enjoy testing new technology, especially when it works smoothly on my computer."
+          </div>
+          <div class="record-controls">
+            <button class="btn-record ready" id="recordBtn">
+              <span>Start Recording</span>
+            </button>
+            <span class="record-timer" id="recordTimer" style="display: none;">0:00</span>
+          </div>
+          <div class="record-status" id="recordStatus"></div>
+        </div>
+
+        <div class="divider"><span>Or Upload Audio</span></div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+          <div class="upload-dropzone" id="uploadDropzone">
+            <input type="file" id="uploadInput" accept="audio/*">
+            <p class="upload-text"><strong>Click to upload</strong> or drag and drop</p>
+            <p class="upload-hint">WAV, MP3, or other audio formats</p>
+          </div>
+
+          <div class="ref-text-section" style="margin-top: 16px;">
+            <label class="form-label">Reference Text (what was said in the audio)</label>
+            <textarea class="form-textarea" id="refTextInput" placeholder="Enter the transcript of the audio..." style="min-height: 80px;"></textarea>
+          </div>
+        </div>
+
+        <!-- Save Voice Form -->
+        <div class="save-voice-form" id="saveVoiceForm">
+          <div class="save-voice-row">
+            <input type="text" class="form-input" id="voiceNameInput" placeholder="Name this voice (e.g., My Voice)">
+            <button class="btn-save" id="saveVoiceBtn">Save Voice</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
