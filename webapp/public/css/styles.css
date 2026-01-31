@@ -597,18 +597,58 @@ body {
 .record-title {
   font-size: 0.875rem;
   font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.record-instructions {
+  font-size: 0.8rem;
+  color: var(--text-muted);
   margin-bottom: 12px;
+}
+
+.record-instructions strong {
+  color: var(--accent-primary);
 }
 
 .record-script {
   background: var(--bg-tertiary);
-  padding: 12px 16px;
+  padding: 16px;
   border-radius: var(--border-radius);
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.7;
   margin-bottom: 16px;
-  font-style: italic;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.record-timer-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  font-size: 2rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.record-timer-display .timer-value {
+  color: var(--text-primary);
+}
+
+.record-timer-display .timer-target {
+  color: var(--text-muted);
+  font-size: 1.25rem;
+}
+
+.record-timer-display.recording .timer-value {
+  color: var(--accent-danger);
+}
+
+.record-timer-display.complete .timer-value {
+  color: var(--accent-success);
 }
 
 .record-controls {
@@ -656,12 +696,6 @@ body {
   50% { transform: scale(1.03); }
 }
 
-.record-timer {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--accent-danger);
-  font-variant-numeric: tabular-nums;
-}
 
 .record-status {
   text-align: center;

@@ -113,14 +113,28 @@
         <!-- Record Section -->
         <div class="record-section">
           <div class="record-title">Record Your Voice</div>
+          <div class="record-instructions">
+            <p>Read the script below clearly and naturally. This takes about <strong>1 minute</strong>.</p>
+          </div>
           <div class="record-script" id="recordScript">
-            "The quick brown fox jumps over the lazy dog. I really enjoy testing new technology, especially when it works smoothly on my computer."
+            "Hello, my name is speaking, and I'm recording my voice today. The weather outside looks absolutely beautiful this morning. I was thinking about grabbing a cup of coffee before starting my work.
+
+You know what? I really enjoy learning new things, especially when it comes to technology. Sometimes the most interesting discoveries happen completely by accident. That's just how life works, isn't it?
+
+Let me tell you about my favorite places to visit. The mountains in autumn are stunning, with all the colorful leaves falling gently to the ground. The ocean is peaceful too, especially at sunset when the sky turns orange and pink.
+
+One, two, three, four, five. First, second, third, fourth, fifth. Monday, Tuesday, Wednesday, Thursday, Friday. January, February, March, April, May.
+
+Thank you for listening to this recording. I hope it captures my voice well!"
+          </div>
+          <div class="record-timer-display" id="recordTimerDisplay">
+            <span class="timer-value" id="recordTimer">0:00</span>
+            <span class="timer-target">/ 1:00</span>
           </div>
           <div class="record-controls">
             <button class="btn-record ready" id="recordBtn">
               <span>Start Recording</span>
             </button>
-            <span class="record-timer" id="recordTimer" style="display: none;">0:00</span>
           </div>
           <div class="record-status" id="recordStatus"></div>
         </div>
@@ -135,7 +149,7 @@
             <p class="upload-hint">WAV, MP3, or other audio formats</p>
           </div>
 
-          <div class="ref-text-section" style="margin-top: 16px;">
+          <div class="ref-text-section" id="refTextSection" style="margin-top: 16px;">
             <label class="form-label">Reference Text (what was said in the audio)</label>
             <textarea class="form-textarea" id="refTextInput" placeholder="Enter the transcript of the audio..." style="min-height: 80px;"></textarea>
           </div>

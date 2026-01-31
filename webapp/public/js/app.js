@@ -41,8 +41,16 @@ const refTextInput = document.getElementById('refTextInput');
 const saveVoiceBtn = document.getElementById('saveVoiceBtn');
 
 // Constants
-const RECORD_SCRIPT = "The quick brown fox jumps over the lazy dog. I really enjoy testing new technology, especially when it works smoothly on my computer.";
-const RECORD_DURATION = 10;
+const RECORD_SCRIPT = `Hello, my name is speaking, and I'm recording my voice today. The weather outside looks absolutely beautiful this morning. I was thinking about grabbing a cup of coffee before starting my work.
+
+You know what? I really enjoy learning new things, especially when it comes to technology. Sometimes the most interesting discoveries happen completely by accident. That's just how life works, isn't it?
+
+Let me tell you about my favorite places to visit. The mountains in autumn are stunning, with all the colorful leaves falling gently to the ground. The ocean is peaceful too, especially at sunset when the sky turns orange and pink.
+
+One, two, three, four, five. First, second, third, fourth, fifth. Monday, Tuesday, Wednesday, Thursday, Friday. January, February, March, April, May.
+
+Thank you for listening to this recording. I hope it captures my voice well!`;
+const RECORD_DURATION = 60; // 1 minute
 
 // Style presets
 const stylePresets = [
@@ -323,6 +331,8 @@ async function startRecording() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream);
     const audioChunks = [];
+    const timerDisplay = document.getElementById('recordTimerDisplay');
+    const refTextSection = document.getElementById('refTextSection');
 
     mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
 
@@ -344,12 +354,19 @@ async function startRecording() {
 
         if (response.ok) {
           recordBtn.className = 'btn-record complete';
-          recordBtn.innerHTML = '<span>Recording Complete</span>';
-          recordStatus.textContent = 'Voice recorded successfully';
+          recordBtn.innerHTML = '<span>Recording Complete - Click to Re-record</span>';
+          recordStatus.textContent = 'Voice recorded successfully!';
           recordStatus.style.color = 'var(--accent-success)';
+          timerDisplay.classList.remove('recording');
+          timerDisplay.classList.add('complete');
 
-          // Pre-fill reference text
+          // Pre-fill reference text with known script (hidden from user)
           refTextInput.value = RECORD_SCRIPT;
+
+          // Hide the reference text section since we know what was said
+          if (refTextSection) {
+            refTextSection.style.display = 'none';
+          }
 
           // Show save form
           saveVoiceForm.classList.add('visible');
@@ -357,24 +374,25 @@ async function startRecording() {
       } catch (error) {
         recordStatus.textContent = 'Failed to upload recording';
         recordStatus.style.color = 'var(--accent-danger)';
+        timerDisplay.classList.remove('recording');
       }
     };
 
     // Start recording
     mediaRecorder.start();
     recordBtn.className = 'btn-record recording';
-    recordBtn.innerHTML = '<span>Stop Recording</span>';
-    recordTimer.style.display = 'inline';
-    recordStatus.textContent = 'Speak now!';
+    recordBtn.innerHTML = '<span>Done Reading - Click to Stop</span>';
+    timerDisplay.classList.add('recording');
+    timerDisplay.classList.remove('complete');
+    recordStatus.textContent = 'Read the script above clearly...';
     recordStatus.style.color = 'var(--text-secondary)';
 
     let seconds = 0;
     recordingInterval = setInterval(() => {
       seconds++;
-      recordTimer.textContent = `0:${seconds.toString().padStart(2, '0')}`;
-      if (seconds >= RECORD_DURATION) {
-        stopRecording();
-      }
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      recordTimer.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
     }, 1000);
 
   } catch (error) {
@@ -393,12 +411,23 @@ function resetRecordingState() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
   }
+  const timerDisplay = document.getElementById('recordTimerDisplay');
+  const refTextSection = document.getElementById('refTextSection');
+
   recordBtn.className = 'btn-record ready';
   recordBtn.innerHTML = '<span>Start Recording</span>';
-  recordTimer.style.display = 'none';
   recordTimer.textContent = '0:00';
   recordStatus.textContent = '';
   recordedBlob = null;
+
+  if (timerDisplay) {
+    timerDisplay.classList.remove('recording', 'complete');
+  }
+
+  // Show reference text section for uploads
+  if (refTextSection) {
+    refTextSection.style.display = 'block';
+  }
 }
 
 // Upload functionality
@@ -462,6 +491,8 @@ function resetUploadState() {
   saveVoiceForm.classList.remove('visible');
   voiceNameInput.value = '';
   refTextInput.value = '';
+  saveVoiceBtn.disabled = false;
+  saveVoiceBtn.textContent = 'Save Voice';
 }
 
 async function handleSaveVoice() {
@@ -472,6 +503,10 @@ async function handleSaveVoice() {
     alert('Please enter a name for this voice');
     return;
   }
+
+  // Show saving state
+  saveVoiceBtn.disabled = true;
+  saveVoiceBtn.textContent = 'Saving...';
 
   try {
     const response = await fetch('/api/save-voice', {
@@ -484,18 +519,23 @@ async function handleSaveVoice() {
 
     if (data.success) {
       await loadVoices();
-      renderSavedVoices();
-      resetUploadState();
-      resetRecordingState();
 
       // Select the newly saved voice
       voiceSelect.value = `custom:${data.voice.id}`;
       selectedVoice = { type: 'custom', id: data.voice.id };
+
+      // Close modal and show success
+      closeModal();
+      showStatus('success', `Voice "${name}" saved! Ready to use.`);
     } else {
       alert(data.error || 'Failed to save voice');
+      saveVoiceBtn.disabled = false;
+      saveVoiceBtn.textContent = 'Save Voice';
     }
   } catch (error) {
     alert('Failed to save voice');
+    saveVoiceBtn.disabled = false;
+    saveVoiceBtn.textContent = 'Save Voice';
   }
 }
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import torch
+import numpy as np
 import soundfile as sf
 from qwen_tts import Qwen3TTSModel
 
@@ -38,6 +39,7 @@ def main():
     parser.add_argument('--instruct', default='', help='Style instruction')
     parser.add_argument('--ref-audio', help='Reference audio path for voice cloning')
     parser.add_argument('--ref-text', default='', help='Reference text for voice cloning')
+    parser.add_argument('--speaker-embedding', help='Cached speaker embedding .npy file (faster than ref-audio)')
     parser.add_argument('--voice-description', default='', help='Voice description for voice design')
     parser.add_argument('--output', required=True, help='Output WAV file path')
 
@@ -56,14 +58,38 @@ def main():
         wavs, sr = model.generate_custom_voice(**kwargs)
 
     elif args.mode == 'voice_clone':
-        if not args.ref_audio:
-            raise ValueError("Reference audio required for voice cloning")
-        wavs, sr = model.generate_voice_clone(
-            text=args.text,
-            language=args.language,
-            ref_audio=args.ref_audio,
-            ref_text=args.ref_text or "Reference audio transcript.",
-        )
+        # Check if we have a cached speaker embedding (faster path)
+        if args.speaker_embedding and args.speaker_embedding.endswith('.npy'):
+            print(f"Using cached speaker embedding: {args.speaker_embedding}")
+            spk_embedding = np.load(args.speaker_embedding)
+            spk_embedding = torch.from_numpy(spk_embedding)
+
+            # Create VoiceClonePromptItem with just the embedding (x_vector_only mode)
+            from qwen_tts.inference.qwen3_tts_model import VoiceClonePromptItem
+            prompt_item = VoiceClonePromptItem(
+                ref_code=None,
+                ref_spk_embedding=spk_embedding,
+                x_vector_only_mode=True,
+                icl_mode=False,
+                ref_text=None
+            )
+
+            wavs, sr = model.generate_voice_clone(
+                text=args.text,
+                language=args.language,
+                voice_clone_prompt=[prompt_item],
+            )
+        elif args.ref_audio:
+            # Fallback to processing reference audio
+            print(f"Processing reference audio: {args.ref_audio}")
+            wavs, sr = model.generate_voice_clone(
+                text=args.text,
+                language=args.language,
+                ref_audio=args.ref_audio,
+                ref_text=args.ref_text or "Reference audio transcript.",
+            )
+        else:
+            raise ValueError("Either --speaker-embedding or --ref-audio required for voice cloning")
 
     elif args.mode == 'voice_design':
         if not args.voice_description:

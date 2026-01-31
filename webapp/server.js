@@ -51,7 +51,7 @@ app.post('/api/upload-reference', upload.single('audio'), (req, res) => {
 });
 
 // Save a cloned voice for reuse
-app.post('/api/save-voice', (req, res) => {
+app.post('/api/save-voice', async (req, res) => {
   const { name, refText } = req.body;
 
   if (!name) {
@@ -71,13 +71,54 @@ app.post('/api/save-voice', (req, res) => {
   }
 
   // Copy audio file
-  fs.copyFileSync(refAudioPath, path.join(voiceDir, 'audio.wav'));
+  const audioPath = path.join(voiceDir, 'audio.wav');
+  fs.copyFileSync(refAudioPath, audioPath);
+
+  // Extract and cache speaker embedding for faster generation
+  const embeddingPath = path.join(voiceDir, 'embedding.npy');
+  const venvPython = path.join(__dirname, '..', 'venv', 'bin', 'python3');
+  const extractScript = path.join(__dirname, 'extract_embedding.py');
+
+  console.log('Extracting speaker embedding...');
+
+  try {
+    await new Promise((resolve, reject) => {
+      const proc = spawn(venvPython, [
+        extractScript,
+        '--audio', audioPath,
+        '--output', embeddingPath
+      ]);
+
+      let stderr = '';
+      proc.stderr.on('data', (data) => {
+        stderr += data.toString();
+        console.log('Extract stderr:', data.toString());
+      });
+      proc.stdout.on('data', (data) => {
+        console.log('Extract stdout:', data.toString());
+      });
+
+      proc.on('close', (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`Embedding extraction failed: ${stderr}`));
+        }
+      });
+    });
+
+    console.log('Speaker embedding cached successfully');
+  } catch (error) {
+    console.error('Failed to extract embedding:', error.message);
+    // Continue without embedding - will fall back to audio processing
+  }
 
   // Save metadata
   const metadata = {
     id: voiceId,
     name: name,
     refText: refText || '',
+    hasEmbedding: fs.existsSync(embeddingPath),
     createdAt: new Date().toISOString()
   };
   fs.writeFileSync(path.join(voiceDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
@@ -176,15 +217,21 @@ app.post('/api/generate', async (req, res) => {
 
   // Check for saved voice or uploaded reference
   let refAudioPath;
+  let embeddingPath;
 
   if (mode === 'voice_clone') {
     if (savedVoiceId) {
       // Use saved voice
       const savedVoiceDir = path.join(voicesDir, savedVoiceId);
       const savedAudioPath = path.join(savedVoiceDir, 'audio.wav');
+      const savedEmbeddingPath = path.join(savedVoiceDir, 'embedding.npy');
       const metadataPath = path.join(savedVoiceDir, 'metadata.json');
 
-      if (fs.existsSync(savedAudioPath)) {
+      // Prefer cached embedding (faster) over audio processing
+      if (fs.existsSync(savedEmbeddingPath)) {
+        embeddingPath = savedEmbeddingPath;
+        console.log('Using cached speaker embedding for faster generation');
+      } else if (fs.existsSync(savedAudioPath)) {
         refAudioPath = savedAudioPath;
         // Use saved refText if not provided
         if (!refText && fs.existsSync(metadataPath)) {
@@ -197,7 +244,10 @@ app.post('/api/generate', async (req, res) => {
       refAudioPath = path.join(__dirname, 'uploads', 'reference_audio.wav');
     }
 
-    if (refAudioPath && fs.existsSync(refAudioPath)) {
+    // Add embedding or audio path to args
+    if (embeddingPath) {
+      args.push('--speaker-embedding', embeddingPath);
+    } else if (refAudioPath && fs.existsSync(refAudioPath)) {
       args.push('--ref-audio', refAudioPath);
     }
   }

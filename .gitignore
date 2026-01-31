@@ -4,7 +4,13 @@ venv/
 
 # Output files
 *.wav
+*.npy
 webapp/output/
+webapp/uploads/
+
+# Saved voices (user data)
+webapp/saved_voices/*/audio.wav
+webapp/saved_voices/*/embedding.npy
 
 # Environment
 .env
